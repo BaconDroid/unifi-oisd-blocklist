@@ -1,0 +1,43 @@
+name: Update UniFi list
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 17:00 UTC is 12:00 noon EST (UTC-5); it is 13:00 EDT during daylight saving time.
+    - cron: "0 17 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-unifi-list
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate list
+        run: |
+          python3 convert-list.py https://small.oisd.nl/domainswild \
+            --exclude-list https://nsfw.oisd.nl/domainswild \
+            --exact-suffix-length 3 \
+            -o unifi-oisd-small-final.txt
+
+      - name: Commit and push if changed
+        run: |
+          if git status --porcelain -- unifi-oisd-small-final.txt | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add unifi-oisd-small-final.txt
+            git commit -m "Update UniFi OISD list"
+            git push
+          else
+            echo "No changes."
+          fi
