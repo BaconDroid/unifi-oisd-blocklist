@@ -71,7 +71,9 @@ country but using a different top-level domain.
 `.github/workflows/update.yml` runs on `workflow_dispatch` and on a daily cron
 at `0 17 * * *` (17:00 UTC). It runs the `--exact-suffix-length 3` command
 above (OISD Small minus OISD NSFW) and commits and pushes
-`unifi-oisd-small-final.txt` only when the file changed.
+`unifi-oisd-small-final-YYYY-MM-DD.txt` and the stable alias
+`unifi-oisd-small-final.txt` only when the list changed. The dated filename
+uses UTC; the previous dated snapshot is removed on each update.
 
 Timezone limit: GitHub Actions cron is always UTC and has no DST support.
 17:00 UTC is noon in EST (UTC-5, winter) but 13:00 in EDT (UTC-4, summer).
