@@ -97,6 +97,8 @@ def convert(
     excluded_domains: set[str] | None = None,
     exclude_short_suffixes: bool = False,
     exact_suffix_length: int | None = None,
+    min_suffix_length: int | None = None,
+    max_suffix_length: int | None = None,
 ) -> tuple[list[str], int, int, int, int]:
     domains: set[str] = set()
     ignored = 0
@@ -117,6 +119,8 @@ def convert(
                 any(domain.endswith(suffix) for suffix in excluded_suffixes)
                 or (exclude_short_suffixes and len(tld) < 3)
                 or (exact_suffix_length is not None and len(tld) != exact_suffix_length)
+                or (min_suffix_length is not None and len(tld) < min_suffix_length)
+                or (max_suffix_length is not None and len(tld) > max_suffix_length)
             ):
                 excluded += 1
             else:
@@ -165,6 +169,18 @@ def main() -> int:
         metavar="N",
         help="keep only domains whose final suffix has exactly N characters (e.g. 3)",
     )
+    parser.add_argument(
+        "--min-suffix-length",
+        type=positive_int,
+        metavar="N",
+        help="keep only domains whose final suffix has at least N characters",
+    )
+    parser.add_argument(
+        "--max-suffix-length",
+        type=positive_int,
+        metavar="N",
+        help="keep only domains whose final suffix has at most N characters",
+    )
     args = parser.parse_args()
 
     try:
@@ -180,6 +196,8 @@ def main() -> int:
             excluded_domains,
             args.exclude_short_suffixes,
             args.exact_suffix_length,
+            args.min_suffix_length,
+            args.max_suffix_length,
         )
     except (OSError, ValueError) as exc:
         parser.error(str(exc))

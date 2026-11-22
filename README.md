@@ -48,10 +48,11 @@ python3 convert-list.py https://small.oisd.nl/domainswild \
   --exclude-suffix .lt --exclude-suffix .bg --exclude-suffix .np \
   -o unifi-oisd-small-final.txt
 
-# Keep only domains whose final suffix has exactly 3 characters
+# Keep only domains whose final suffix has 3 to 5 characters
 python3 convert-list.py https://small.oisd.nl/domainswild \
   --exclude-list https://nsfw.oisd.nl/domainswild \
-  --exact-suffix-length 3 \
+  --min-suffix-length 3 \
+  --max-suffix-length 5 \
   -o unifi-oisd-small-final.txt
 
 # Or read from stdin
@@ -69,7 +70,7 @@ country but using a different top-level domain.
 ## Daily update
 
 `.github/workflows/update.yml` runs on `workflow_dispatch` and on a daily cron
-at `0 17 * * *` (17:00 UTC). It runs the `--exact-suffix-length 3` command
+at `0 17 * * *` (17:00 UTC). It runs the 3-to-5-character suffix command
 above (OISD Small minus OISD NSFW) and commits and pushes
 `unifi-oisd-small-final-YYYY-MM-DD.txt` and the stable alias
 `unifi-oisd-small-final.txt` only when the list changed. The dated filename
