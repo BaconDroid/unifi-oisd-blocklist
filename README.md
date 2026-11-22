@@ -1,81 +1,72 @@
 # UniFi OISD Blocklist
 
-Daily-generated UniFi Content Filter blocklist based on OISD Small. The
-published list removes domains from OISD NSFW and keeps only domains whose
-final suffix has exactly three characters.
+Daily-generated blocklist for the UniFi Content Filter. The published list is
+generated from [OISD Small](https://oisd.nl/), removes domains present in the
+[OISD NSFW list](https://nsfw.oisd.nl/domainswild), and keeps domains whose
+final suffix is between three and five characters long.
 
-The UniFi file format and initial idea were inspired by
+The UniFi file format and the initial idea were inspired by
 [Unifi-Content-Filter-Blocklist](https://github.com/zombiehunternr1/Unifi-Content-Filter-Blocklist).
-This repository is an independent implementation with automatic OISD updates.
+This is an independent implementation with automated OISD updates.
 
-`convert-list.py` converts common domain-list formats to the format accepted by
-UniFi Content Filter: one domain per line.
+## Use with UniFi
 
-It accepts a local file or an HTTP(S) URL, including OISD's `domainswild`
-feeds. It removes comments, hosts-file IP addresses, AdGuard delimiters,
-wildcard prefixes, invalid values, and duplicate domains.
+Use the stable URL below in UniFi. It always points to the latest generated
+list:
+
+```text
+https://raw.githubusercontent.com/BaconDroid/unifi-oisd-blocklist/main/unifi-oisd-small-final.txt
+```
+
+The repository also publishes a dated snapshot, for example:
+
+```text
+https://raw.githubusercontent.com/BaconDroid/unifi-oisd-blocklist/main/unifi-oisd-small-final-2026-11-22.txt
+```
+
+The current generated list contains approximately 47,000 unique domains and
+is kept below 1 MB. The exact count changes as OISD is updated.
+
+## Converter
+
+`convert-list.py` converts common domain-list formats to the UniFi format: one
+domain per line. It accepts a local file, standard input, or an HTTP(S) URL.
+It removes comments, hosts-file IP addresses, AdGuard delimiters, wildcard
+prefixes, invalid values, and duplicates.
 
 ```sh
-# Convert a downloaded list
+# Convert a local file
 python3 convert-list.py input.txt -o unifi-blocklist.txt
 
-# Convert OISD directly
-python3 convert-list.py https://small.oisd.nl/domainswild -o unifi-oisd-small.txt
-
-# Exclude selected country-code suffixes from the generated file
-python3 convert-list.py https://small.oisd.nl/domainswild \
-  --exclude-suffix .ru --exclude-suffix .cn \
-  -o unifi-oisd-small-without-ru-cn.txt
-
-# Configuration correspondant aux 15 pays à exclure
-python3 convert-list.py https://small.oisd.nl/domainswild \
-  --exclude-suffix .in --exclude-suffix .tr --exclude-suffix .ir \
-  --exclude-suffix .ru --exclude-suffix .cn --exclude-suffix .kp \
-  --exclude-suffix .by --exclude-suffix .ua --exclude-suffix .ng \
-  --exclude-suffix .br --exclude-suffix .bd --exclude-suffix .iq \
-  --exclude-suffix .lt --exclude-suffix .bg --exclude-suffix .np \
-  -o unifi-oisd-small.txt
-
-# Version recommandée : pays sélectionnés, suffixes de moins de 3 caractères
-# et domaines présents dans la liste OISD NSFW complète
-python3 convert-list.py https://small.oisd.nl/domainswild \
-  --exclude-short-suffixes \
-  --exclude-list https://nsfw.oisd.nl/domainswild \
-  --exclude-suffix .in --exclude-suffix .tr --exclude-suffix .ir \
-  --exclude-suffix .ru --exclude-suffix .cn --exclude-suffix .kp \
-  --exclude-suffix .by --exclude-suffix .ua --exclude-suffix .ng \
-  --exclude-suffix .br --exclude-suffix .bd --exclude-suffix .iq \
-  --exclude-suffix .lt --exclude-suffix .bg --exclude-suffix .np \
-  -o unifi-oisd-small-final.txt
-
-# Keep only domains whose final suffix has 3 to 5 characters
+# Convert OISD Small and exclude the OISD NSFW list
 python3 convert-list.py https://small.oisd.nl/domainswild \
   --exclude-list https://nsfw.oisd.nl/domainswild \
   --min-suffix-length 3 \
   --max-suffix-length 5 \
   -o unifi-oisd-small-final.txt
 
-# Or read from stdin
+# Read from standard input
 cat input.txt | python3 convert-list.py - -o unifi-blocklist.txt
 ```
 
 The converter writes statistics to stderr and the converted list to stdout
-unless `--output` is supplied. OISD's `big` feed is much larger than the
-custom list shown in the source repository, so `small` is a safer starting
-point for UniFi testing. Suffix exclusions are optional and apply to the
-suffix itself and its subdomains; they do not remove domains hosted in a
-country but using a different top-level domain.
-
+unless `--output` is supplied. Suffix filters apply to the final suffix and
+its subdomains; they do not identify where a domain is physically hosted.
 
 ## Daily update
 
-`.github/workflows/update.yml` runs on `workflow_dispatch` and on a daily cron
-at `0 17 * * *` (17:00 UTC). It runs the 3-to-5-character suffix command
-above (OISD Small minus OISD NSFW) and commits and pushes
-`unifi-oisd-small-final-YYYY-MM-DD.txt` and the stable alias
-`unifi-oisd-small-final.txt` only when the list changed. The dated filename
-uses UTC; the previous dated snapshot is removed on each update.
+`.github/workflows/update.yml` runs on `workflow_dispatch` and daily at
+`17:00 UTC` (`0 17 * * *`). It downloads OISD Small and OISD NSFW, generates
+the list, writes `unifi-oisd-small-final-YYYY-MM-DD.txt`, updates the stable
+`unifi-oisd-small-final.txt` alias, and commits only when the output changes.
+The previous dated snapshot is removed on each update.
 
-Timezone limit: GitHub Actions cron is always UTC and has no DST support.
-17:00 UTC is noon in EST (UTC-5, winter) but 13:00 in EDT (UTC-4, summer).
-Scheduled runs can also start several minutes late under load.
+GitHub Actions schedules use UTC and do not adjust for daylight saving time.
+`17:00 UTC` is noon in EST (UTC-5) and 13:00 in EDT (UTC-4). Scheduled runs
+may also start a few minutes late under GitHub load.
+
+## Credits
+
+- [OISD](https://oisd.nl/) provides the source lists.
+- [Unifi-Content-Filter-Blocklist](https://github.com/zombiehunternr1/Unifi-Content-Filter-Blocklist)
+  inspired the UniFi format and project direction.
